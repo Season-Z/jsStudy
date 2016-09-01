@@ -3,22 +3,22 @@
 
 ### 概述
 
-对象中包含一系列属性，这些属性是无序的。每个属性都有一个字符串`key`和对应的`value`。
+JavaScript是一种面向对象的语言，开发中使用对象的方法能提高代码的可读性，更易维护，写出更加优雅的代码。本文主要介绍一些对象的一些基础知识和一些小技巧。
 
 ---
  
 ### 对象结构
-	1.key（键值）	
-	2.对象属性（可增加删除）
+	1.key	
+	2.对象属性
 		* writable
 		* enumerable
 		* configurable
 		* value
 	3.对象原型
 		* prototype
-	4.对象种类（类型）
+	4.对象种类
 		* class
-	5.标签（是否允许增加新属性）
+	5.标签
 		* extensible	
 		
 ---
@@ -26,7 +26,7 @@
 
 #### 对象键值
 
-对象中包含一系列属性，这些属性是无序的。每个属性都有一个字符串key和对应的value。
+对象中包含一系列属性，这些属性是无序的。每个属性都有一个字符串`key`和对应的`value`。
 
 
 * 访问属性，可以通过`.`和`[]`，`[]`中间为字符串，如果不是字符串，会自动转化成字符串。
@@ -61,7 +61,7 @@
 
 * 访问对象属性的值时，如果对象本身上没有改属性则会沿着原型链进行查找。如果到原型链的末端还没查到则会返回`undefined`。
 
-		unction foo(){};
+		function foo(){};
 		foo.prototype.z = 3;
 		
 		var obj =new foo();
@@ -73,11 +73,18 @@
 
 * `in`操作可以判断该对象是否存在某个属性，但是不能判断是否上对象本身具有还是其原型链拥有的。可以使用`hasOwnProperty()`进行判断。
 
+		function foo(){};
+		foo.prototype.z = 3;
+		var obj =new foo();
+
 		'z' in obj; // true
 		obj.hasOwnProperty('z'); // false
 
 * 给对象赋值，如果不存在赋值的属性，则在该对象上新增该属性，如果存在的话就修改改属性的值。
 
+		function foo(){};
+		foo.prototype.z = 3;
+		var obj =new foo();
 
 		obj.z = 5;
 		obj.hasOwnProperty('z'); // true
@@ -115,7 +122,7 @@
 
 	1. `configurable`值为布尔值，默认为`true`，可删除。判断对象的属性能否用`delete`删除掉,严格模式下`configurable`为`false`时，`delete`会报错。
 
-	2. `enumerable`表示是否能够通过`for…in`语句来枚举出属性，默认是true，true可以枚举，false不可。可以通过用propertyIsEnumerable来获取Enumerable的值。
+	2. `enumerable`表示是否能够通过`for…in`语句来枚举出属性，默认是true，true可以枚举，false不可。可以通过用`propertyIsEnumerable`来获取`enumerable`的值。
 
 			cat.propertyIsEnumerable('price'); // false
 
@@ -237,14 +244,14 @@
 
 ###### extensible标签
 
-* `extensible`判断对象能否被拓展（`writable`表示能否修改，`configurable`表示能否删除）。`isExtensible`判断能否被拓展，`preventExtensions`设置该对象不能拓展。
+* `extensible`判断对象能否被拓展（`writable`表示能否修改，`configurable`表示能否删除）。`isExtensible`判断能否被拓展，`preventExtensions`设置该对象不能拓展。`seal`和`freeze`是在对象不能被拓展的基础上进行的操作，具体效果如下。这里的方法只会对对象本身有作用，是不会作用在对象的原型链上。
 
 		var obj = {x : 1, y : 2};
 		Object.isExtensible(obj); // true
 		Object.preventExtensions(obj);
 		Object.isExtensible(obj); // false
 		obj.z = 1;
-		obj.z; // undefined, add new property failed
+		obj.z; // undefined
 		Object.getOwnPropertyDescriptor(obj, 'x');
 		// Object {value: 1, writable: true, enumerable: true, configurable: true}
 		
@@ -274,7 +281,7 @@
 		obj.x; // 1
 		
 		
-		var obj = {
+		var object = {
 		    x : 1,
 		    y : 2,
 		    o : {
@@ -285,6 +292,52 @@
 		        }
 		    }
 		};
-		JSON.stringify(obj); // "{"x":1,"y":2,"o":3}"
+		JSON.stringify(object); // "{"x":1,"y":2,"o":3}"
 
 * `JSON.stringify()`接收三个参数，第一项是`value`，表示输入的对象或数组；第二项是`replacer`，表示用什么做分隔符；第三项是`space`，表示用什么做分隔符。
+
+	* 第二个参数存在，且为函数时
+
+			function switchUpper(key, value) { 
+			    return value.toString().toUpperCase(); 
+			}
+
+			var json1 = JSON.stringify(["onepiece", "naruto", "bleach"], switchUpper);
+			// ONEPIECE,NARUTO,BLEACH 
+
+			var json2 = JSON.stringify({"aaa": "onepiece", "bbb": "naruto", "ccc": "bleach"}, switchUpper);
+			// [OBJECT OBJECT]
+
+	* 第二个参数存在，且为数组时
+	
+			var stuArr1 = ["onepiece", "naruto", "bleach"];
+			var stuArr2 = [1,2]; 
+			var json = JSON.stringify(stuArr1,stuArr2); // ["onepiece","naruto","bleach"]
+
+	* 如果第一个参数是对象，第二个参数是数组时
+
+		* 如果省略的话，那么显示出来的值就没有分隔符，直接输出来 。  
+		* 如果是一个数字的话，那么它就定义缩进几个字符，当然如果大于10 ，则默认为10，因为最大值为10。  
+		* 如果是一些转义字符，比如“\t”，表示回车，那么它每行一个回车。  
+		* 如果仅仅是字符串，就在每行输出值的时候把这些字符串附加上去。当然，最大长度也是10个字符。
+
+				var stuObj = {"id": "20122014001", "name": "Tomy", "age": 25}; 
+				var stuArr = ["id", "age", "addr"]; 
+				var json = JSON.stringify(stuObj,stuArr);  
+				// {"id":"20122014001","age":25}
+
+				var json1 = JSON.stringify(stuObj,stuArr,1000);
+				// {
+				          "id": "20122014001",
+				          "age": 25
+				}
+				var json2 = JSON.stringify(stuObj,stuArr,'\t'); 
+				//  {
+						"id": "20122014001",
+						"age": 25
+					}
+				var json3 = JSON.stringify(stuObj,stuArr,'OK'); 
+				// 	{
+					OK"id": "20122014001",
+					OK"age": 25
+					}
